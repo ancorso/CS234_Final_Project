@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from utils import binary_reward, apply_policy_multiple, dataset_accuracy
+from utils import binary_reward, apply_policy_multiple, dataset_accuracy, dataset_severe_mistakes
 from baseline_algs import fixed_dose, clinical_dosing_nan_to_medium, clinical_dosing_nan_to_zero
 from linucb_alg import LinUCB, LinRegression
 from matplotlib import pyplot as plt
@@ -8,9 +8,8 @@ from matplotlib import pyplot as plt
 filename = "data/warfarin.csv"
 data = pd.read_csv(filename)
 
-# baseline values:
-fd_acc = dataset_accuracy(fixed_dose, data, binary_reward)
-print("accuracy of fixed dose: ", fd_acc)
+
+sm_fd = dataset_severe_mistakes(fixed_dose, data, binary_reward)
 
 cd_acc = dataset_accuracy(clinical_dosing_nan_to_zero, data, binary_reward)
 print('accuracy of clinical dosing algorithm: ', cd_acc)

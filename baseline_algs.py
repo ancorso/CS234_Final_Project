@@ -10,7 +10,19 @@ def age_to_decade(age):
         return int(age[0])
     return float('nan')
 
-def clinical_dosing_alg(state, t, reward_fn):
+def clinical_dosing_nan_to_zero(state,t,reward_fn):
+    a = clinical_dosing_alg(state, t)
+    r = reward_fn(a, state)
+    return a, r
+
+def clinical_dosing_nan_to_medium(state, t, reward_fn):
+    a = clinical_dosing_alg(state, t)
+    if a == 0:
+        a = 2
+    r = reward_fn(a, state)
+    return a, r
+
+def clinical_dosing_alg(state, t):
     sqrt_dose = 4.0376 \
                 - 0.2546 * age_to_decade(state.loc['Age']) \
                 + 0.0118 * state.loc['Height (cm)'] \
@@ -24,5 +36,4 @@ def clinical_dosing_alg(state, t, reward_fn):
                 - 0.5695 * state.loc['Amiodarone (Cordarone)']
 
     a = bin_dose(sqrt_dose**2)
-    r = reward_fn(a, state)
-    return a, r
+    return a
