@@ -11,7 +11,24 @@ def bin_dose(dosage):
 vbin_dose = np.vectorize(bin_dose)
 
 
-def binary_reward(pred_bin, data_row):
+def wager_reward(pred_bin, data_row, confidence):
+    ground_truth = bin_dose(data_row.loc['Therapeutic Dose of Warfarin'])
+    return 0 if pred_bin == ground_truth else  -confidence
+
+def severity_reward(pred_bin, data_row, confidence):
+    ground_truth = bin_dose(data_row.loc['Therapeutic Dose of Warfarin'])
+    if pred_bin == ground_truth:
+        return 0
+    if np.abs(pred_bin - ground_truth) == 1:
+        return -0.5
+    return -1.0
+
+def severity_plus_wager(pred_bin, data_row, confidence):
+    ground_truth = bin_dose(data_row.loc['Therapeutic Dose of Warfarin'])
+    return 0 if pred_bin == ground_truth else -np.abs(pred_bin - ground_truth)*confidence
+
+
+def binary_reward(pred_bin, data_row, confidence = None):
     ground_truth = bin_dose(data_row.loc['Therapeutic Dose of Warfarin'])
     return 0 if pred_bin == ground_truth or np.isnan(ground_truth) else -1
 
@@ -25,13 +42,13 @@ def severe_mistakes(predictions, ground_truth):
     not_nan = (ground_truth != 0) & (predictions != 0)
     predictions = predictions[not_nan]
     ground_truth = ground_truth[not_nan]
-    np.sum(np.abs(predictions - ground_truth) > 1)
+    return np.sum(np.abs(predictions - ground_truth) > 1)
 
-def dataset_severe_mistakes(policy, dataset, reward_fn):
+def dataset_analyze_mistakes(policy, dataset, reward_fn):
     actions, rewards = apply_policy(policy, dataset, reward_fn)
     yname = 'Therapeutic Dose of Warfarin'
     ground_truth = vbin_dose(np.squeeze(dataset.loc[:, dataset.columns == yname].values))
-    return severe_mistakes(actions, ground_truth)
+    return accuracy(actions, ground_truth), severe_mistakes(actions, ground_truth)
 
 def apply_policy(policy, dataset, reward_fn):
     rows = dataset.values.shape[0]

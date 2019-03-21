@@ -5,15 +5,13 @@ from baseline_algs import fixed_dose, clinical_dosing_nan_to_medium, clinical_do
 from linucb_alg import LinUCB, LinRegression
 from matplotlib import pyplot as plt
 
+import random
+from datetime import datetime
+random.seed(datetime.now())
+
 filename = "data/warfarin.csv"
 data = pd.read_csv(filename)
 
-# baseline values:
-fd_acc = dataset_accuracy(fixed_dose, data, binary_reward)
-print("accuracy of fixed dose: ", fd_acc)
-
-cd_acc = dataset_accuracy(clinical_dosing_nan_to_zero, data, binary_reward)
-print('accuracy of clinical dosing algorithm: ', cd_acc)
 
 p_low_data = LinUCB(data, columns_to_use=[
     "Height (cm)",
@@ -26,44 +24,39 @@ p_low_data = LinUCB(data, columns_to_use=[
     'Simvastatin (Zocor)',
     'Aspirin',
     'Herbal Medications, Vitamins, Supplements',
-    ], verbose = True)
-# lucb_acc = dataset_accuracy(p, data, binary_reward)
-# print('accuracy of LinUCB dosing algorithm with limited features: ', lucb_acc)
-# p_low_data.print_thetas()
+    ])
 
 
-p_all_data = LinUCB(data, verbose = True)
+p_all_data = LinUCB(data)
 
 p_lin_reg = LinRegression(data, p_all_data)
 lr_acc = dataset_accuracy(p_lin_reg, data, binary_reward)
 print("linear regression accuracy: ", lr_acc)
 
 
-# lucb_acc = dataset_accuracy(p, data, binary_reward)
-# p_all_data.print_thetas()
-# print('accuracy of LinUCB dosing algorithm with all features: ', lucb_acc)
-
 # Plot the reward of teh fixed dose algorithm
 # comparing regret and running accuracy
-actions, rewards, accuracy = apply_policy_multiple(fixed_dose, data, binary_reward, 6)
-regret = -np.cumsum(rewards, axis=1)
+# actions, rewards, accuracy = apply_policy_multiple(fixed_dose, data, binary_reward, 10)
+# regret = -np.cumsum(rewards, axis=1)
+#
+# mean_reg_fd = np.mean(regret, axis=0)
+# std_reg = np.std(regret, axis=0)
+# mean_acc = np.mean(accuracy, axis=0)
+# std_acc = np.std(accuracy, axis=0)
+#
+# plt.figure(2)
+# x = np.arange(0, mean_reg_fd.shape[0])
+# plt.plot(x, mean_reg_fd)
+# plt.fill_between(x, mean_reg_fd - std_reg, mean_reg_fd + std_reg, alpha=0.4)
+# plt.xlabel("Patient Number")
+# plt.ylabel("Regret")
+# plt.title("Regret for Fixed Dose Algorithm")
+# plt.savefig("regret_fd.png")
 
-mean_reg_fd = np.mean(regret, axis=0)
-std_reg = np.std(regret, axis=0)
-mean_acc = np.mean(accuracy, axis=0)
-std_acc = np.std(accuracy, axis=0)
-
-plt.figure(2)
-x = np.arange(0, mean_reg_fd.shape[0])
-plt.plot(x, mean_reg_fd)
-plt.fill_between(x, mean_reg_fd - std_reg, mean_reg_fd + std_reg, alpha=0.4)
-plt.xlabel("Patient Number")
-plt.ylabel("Regret")
-plt.title("Regret for Fixed Dose Algorithm")
-plt.savefig("regret_fd.png")
-
-policies = [fixed_dose, clinical_dosing_nan_to_medium, p_lin_reg, p_low_data]#, p_all_data]
-labels = ["Fixed Medium Dose", "Clinical Dosing Algorithm", "Linear Regression Model", "LinUCB (Top 10 features)"]#, "LinUCB (All features)"]
+policies = [fixed_dose, clinical_dosing_nan_to_medium, p_lin_reg, p_low_data, p_all_data]
+policies = [p_all_data]
+labels = ["Fixed Medium Dose", "Clinical Dosing Algorithm", "Linear Regression Model", "LinUCB (Top 10 features)", "LinUCB (All features)"]
+labels = ["LinUCB (All features)"]
 
 for pi in range(len(policies)):
     policy = policies[pi]
@@ -72,10 +65,10 @@ for pi in range(len(policies)):
     print("Running policy: ", label)
 
     # comparing regret and running accuracy
-    actions, rewards, accuracy = apply_policy_multiple(policy, data, binary_reward, 6)
+    actions, rewards, accuracy = apply_policy_multiple(policy, data, binary_reward, 10)
     regret = -np.cumsum(rewards, axis = 1)
 
-    mean_reg =  mean_reg_fd - np.mean(regret, axis = 0)
+    mean_reg =  np.mean(regret, axis = 0) # - mean_reg_fd
     std_reg = np.std(regret, axis = 0)
     mean_acc = np.mean(accuracy, axis=0)
     std_acc = np.std(accuracy, axis=0)

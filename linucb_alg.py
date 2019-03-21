@@ -26,6 +26,10 @@ def to_onehot(feature, categories):
         oh[-1] = 1
     return oh
 
+def softmax(ps):
+    exps = np.exp(ps)
+    return exps / sum(exps)
+
 
 class LinUCB:
     def __init__(self,
@@ -68,7 +72,7 @@ class LinUCB:
             if c not in self.columns_to_exclude and c not in self.columns_with_floats:
                 self.dataset_categories[c] = get_unique(dataset.loc[:,c])
 
-        print(self.dataset_categories)
+        # print(self.dataset_categories)
 
         self.state_mapping = {}
 
@@ -157,8 +161,10 @@ class LinUCB:
         ps = np.zeros(self.na)
         for a in range(self.na):
             ps[a] = np.dot(self.thetas[a], x) + self.alpha(t) * np.sqrt(np.dot(x, np.dot(self.Ainv[a], x)))
+
+        ps = softmax(ps)
         a = np.argmax(ps)
-        r = reward_fn(a + 1, state)
+        r = reward_fn(a + 1, state, ps[a])
         if not self.freeze_weights:
             self.As[a] = self.As[a] + np.outer(x, x)
             self.bs[a] = self.bs[a] + x*r
